@@ -47,7 +47,6 @@ const BramsStore = () => {
 
   // Cargar productos
   useEffect(() => {
-    // Productos de fallback dentro del useEffect
     const fallbackProducts = [
       {
         id: "prod_001",
@@ -120,7 +119,6 @@ const BramsStore = () => {
 
     loadProducts();
 
-    // Detectar cambios de conectividad
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     
@@ -236,7 +234,7 @@ const BramsStore = () => {
 
     try {
       const orderNumber = `BS-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
-      const total = cartTotal + 5000; // incluye envío
+      const total = cartTotal + 5000;
 
       console.log('📝 Nuevo pedido creado:', {
         orderNumber,
@@ -254,7 +252,6 @@ Método de pago: ${paymentMethods.find(p => p.id === customerInfo.paymentMethod)
 El pedido aparecerá automáticamente en el panel de administración.
 Recibirás un email de confirmación pronto.`);
       
-      // Limpiar carrito
       setCart([]);
       setShowCheckout(false);
       setCustomerInfo({
@@ -273,7 +270,7 @@ Recibirás un email de confirmación pronto.`);
     }
   };
 
-  // Componente de producto enterprise
+  // Componente de producto
   const ProductCard = ({ product }) => (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
       <div className="relative">
@@ -326,10 +323,9 @@ Recibirás un email de confirmación pronto.`);
     </div>
   );
 
-  // Vista principal (DISEÑO ORIGINAL HERMOSO)
+  // Vista principal
   const HomeView = () => (
     <div className="space-y-8">
-      {/* Hero Section Original */}
       <div className="bg-gradient-to-r from-blue-600 via-orange-500 to-blue-700 text-white rounded-2xl p-8 md:p-12">
         <div className="max-w-2xl">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
@@ -356,7 +352,6 @@ Recibirás un email de confirmación pronto.`);
         </div>
       </div>
 
-      {/* Estado de conexión y sync ORIGINAL */}
       <div className="bg-white p-4 rounded-xl shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -389,7 +384,6 @@ Recibirás un email de confirmación pronto.`);
         </div>
       </div>
 
-      {/* Loading o error */}
       {loading && (
         <div className="flex items-center justify-center py-12">
           <Loader className="w-8 h-8 animate-spin text-blue-500 mr-3" />
@@ -409,7 +403,6 @@ Recibirás un email de confirmación pronto.`);
         </div>
       )}
 
-      {/* Productos destacados ORIGINAL */}
       {!loading && products.length > 0 && (
         <div>
           <h2 className="text-3xl font-bold text-gray-800 mb-6">
@@ -423,7 +416,6 @@ Recibirás un email de confirmación pronto.`);
         </div>
       )}
 
-      {/* Información de envío ORIGINAL */}
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
         <div className="flex items-center mb-3">
           <Truck className="w-6 h-6 text-amber-600 mr-3" />
@@ -435,7 +427,6 @@ Recibirás un email de confirmación pronto.`);
         </p>
       </div>
 
-      {/* Categorías ORIGINAL */}
       <div>
         <h2 className="text-3xl font-bold text-gray-800 mb-6">Categorías</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -484,7 +475,6 @@ Recibirás un email de confirmación pronto.`);
         </div>
       </div>
 
-      {/* Filtros */}
       <div className="bg-white p-6 rounded-xl shadow-lg">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
@@ -536,7 +526,7 @@ Recibirás un email de confirmación pronto.`);
     </div>
   );
 
-  // Vista del carrito (checkout original)
+  // Vista del carrito
   const CheckoutView = () => (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-white p-6 rounded-xl shadow-lg">
@@ -623,6 +613,37 @@ Recibirás un email de confirmación pronto.`);
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <input
                   type="text"
+                  placeholder="Nombre completo *"
+                  value={customerInfo.name}
+                  onChange={(e) => setCustomerInfo(prev => ({ ...prev, name: e.target.value }))}
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+                <input
+                  type="email"
+                  placeholder="Email *"
+                  value={customerInfo.email}
+                  onChange={(e) => setCustomerInfo(prev => ({ ...prev, email: e.target.value }))}
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="Teléfono *"
+                  value={customerInfo.phone}
+                  onChange={(e) => setCustomerInfo(prev => ({ ...prev, phone: e.target.value }))}
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Ciudad"
+                  value={customerInfo.city}
+                  onChange={(e) => setCustomerInfo(prev => ({ ...prev, city: e.target.value }))}
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="text"
                   placeholder="Dirección completa"
                   value={customerInfo.address}
                   onChange={(e) => setCustomerInfo(prev => ({ ...prev, address: e.target.value }))}
@@ -675,7 +696,6 @@ Recibirás un email de confirmación pronto.`);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header ORIGINAL */}
       <header className="bg-white shadow-lg sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -741,7 +761,6 @@ Recibirás un email de confirmación pronto.`);
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {showCheckout && <CheckoutView />}
         {!showCheckout && currentView === 'home' && <HomeView />}
@@ -752,34 +771,3 @@ Recibirás un email de confirmación pronto.`);
 };
 
 export default BramsStore;
-                  placeholder="Nombre completo *"
-                  value={customerInfo.name}
-                  onChange={(e) => setCustomerInfo(prev => ({ ...prev, name: e.target.value }))}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <input
-                  type="email"
-                  placeholder="Email *"
-                  value={customerInfo.email}
-                  onChange={(e) => setCustomerInfo(prev => ({ ...prev, email: e.target.value }))}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <input
-                  type="tel"
-                  placeholder="Teléfono *"
-                  value={customerInfo.phone}
-                  onChange={(e) => setCustomerInfo(prev => ({ ...prev, phone: e.target.value }))}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Ciudad"
-                  value={customerInfo.city}
-                  onChange={(e) => setCustomerInfo(prev => ({ ...prev, city: e.target.value }))}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-                <input
-                  type="text"
