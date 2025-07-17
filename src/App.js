@@ -628,6 +628,13 @@ Recibirás un email de confirmación pronto.`);
                   onChange={(e) => setCustomerInfo(prev => ({ ...prev, address: e.target.value }))}
                   className="md:col-span-2 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
+                <input
+                  type="text"
+                  placeholder="Código postal"
+                  value={customerInfo.postalCode}
+                  onChange={(e) => setCustomerInfo(prev => ({ ...prev, postalCode: e.target.value }))}
+                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
               </div>
 
               <div className="mb-6">
@@ -745,7 +752,6 @@ Recibirás un email de confirmación pronto.`);
 };
 
 export default BramsStore;
-                  type="text"
                   placeholder="Nombre completo *"
                   value={customerInfo.name}
                   onChange={(e) => setCustomerInfo(prev => ({ ...prev, name: e.target.value }))}
@@ -776,3 +782,4 @@ export default BramsStore;
                   className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
                 <input
+                  type="text"
