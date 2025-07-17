@@ -237,8 +237,41 @@ const BramsStore = () => {
     { id: 'transfer', name: 'Transferencia Bancaria', description: 'BAC, BCR, Banco Nacional' }
   ];
 
+  // Cargar productos desde GitHub
+  const loadProducts = useCallback(async (api = apiManager) => {
+    if (!api) return;
+
+    try {
+      setApiStatus(prev => ({ ...prev, syncing: true }));
+      setEnterpriseData(prev => ({ ...prev, loading: true, error: null }));
+
+      const data = await api.getProducts(true);
+      
+      setEnterpriseData({
+        products: data.products || [],
+        loading: false,
+        error: null
+      });
+
+      setApiStatus(prev => ({
+        ...prev,
+        syncing: false,
+        lastSync: new Date().toISOString()
+      }));
+
+    } catch (error) {
+      console.error('Error cargando productos:', error);
+      setEnterpriseData(prev => ({
+        ...prev,
+        loading: false,
+        error: error.message
+      }));
+      setApiStatus(prev => ({ ...prev, syncing: false }));
+    }
+  }, [apiManager]);
+
   // ===================================
-  // INICIALIZACIÓN DE LA API
+  // INICIALIZACIÓN DE LA API - CORREGIDO
   // ===================================
 
   useEffect(() => {
@@ -291,40 +324,7 @@ const BramsStore = () => {
     };
 
     initializeAPI();
-  }, []);
-
-  // Cargar productos desde GitHub
-  const loadProducts = useCallback(async (api = apiManager) => {
-    if (!api) return;
-
-    try {
-      setApiStatus(prev => ({ ...prev, syncing: true }));
-      setEnterpriseData(prev => ({ ...prev, loading: true, error: null }));
-
-      const data = await api.getProducts(true);
-      
-      setEnterpriseData({
-        products: data.products || [],
-        loading: false,
-        error: null
-      });
-
-      setApiStatus(prev => ({
-        ...prev,
-        syncing: false,
-        lastSync: new Date().toISOString()
-      }));
-
-    } catch (error) {
-      console.error('Error cargando productos:', error);
-      setEnterpriseData(prev => ({
-        ...prev,
-        loading: false,
-        error: error.message
-      }));
-      setApiStatus(prev => ({ ...prev, syncing: false }));
-    }
-  }, [apiManager]);
+  }, [loadProducts]); // ✅ CORRECCIÓN: Agregar loadProducts como dependencia
 
   // Sync manual
   const handleManualSync = () => {
