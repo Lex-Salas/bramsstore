@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Search, ShoppingCart, User, Menu, Smartphone, Laptop, Headphones, Shirt, Settings, Star, Truck, CreditCard, Trash2 } from 'lucide-react';
 
 const BramsStore = () => {
-  // Estado para productos
-  const [products, setProducts] = useState([
+  // Productos fijos (sin modificación desde la interfaz)
+  const products = [
     {
       id: 1,
       name: "iPhone 15 Pro",
@@ -70,15 +70,17 @@ const BramsStore = () => {
       featured: false,
       sku: "SHIRT-TECH"
     }
-  ]);
+  ];
 
   // Estados de la aplicación
   const [currentView, setCurrentView] = useState('home');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
-  const [exchangeRate] = useState(540);
   const [showCheckout, setShowCheckout] = useState(false);
+
+  // Tipo de cambio fijo
+  const exchangeRate = 540;
 
   // Estados para checkout
   const [customerInfo, setCustomerInfo] = useState({
