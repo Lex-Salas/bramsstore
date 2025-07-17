@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#2593FF" />
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="BramsStore - Tu tienda de confianza para tecnología, accesorios, software, servicios técnicos y más en Costa Rica." />
+  <meta name="keywords" content="tecnología, iPhone, MacBook, accesorios, software, reparación, Costa Rica, tienda online" />
+  <meta name="author" content="BramsStore" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.bramsstore.com/" />
+  <meta property="og:title" content="BramsStore - Tecnología y Accesorios" />
+  <meta property="og:description" content="Tu tienda de confianza para tecnología, accesorios, software y servicios técnicos en Costa Rica." />
+  <meta property="og:image" content="%PUBLIC_URL%/og-image.jpg" />
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://www.bramsstore.com/" />
+  <meta property="twitter:title" content="BramsStore - Tecnología y Accesorios" />
+  <meta property="twitter:description" content="Tu tienda de confianza para tecnología, accesorios, software y servicios técnicos en Costa Rica." />
+  <meta property="twitter:image" content="%PUBLIC_URL%/og-image.jpg" />
+  
+  <!-- Apple Touch Icon -->
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+  
+  <!-- Manifest -->
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  
+  <!-- Preconnect to external domains -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://images.unsplash.com">
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    "name": "BramsStore",
+    "description": "Tienda de tecnología, accesorios, software y servicios técnicos",
+    "url": "https://www.bramsstore.com",
+    "logo": "https://www.bramsstore.com/logo.png",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "CR"
+    },
+    "currenciesAccepted": "CRC, USD",
+    "paymentAccepted": "Credit Card, PayPal, Bank Transfer, SINPE Móvil"
+  }
+  </script>
+  
+  <title>BramsStore - Tecnología y Accesorios | Costa Rica</title>
+</head>
+<body>
+  <noscript>
+    <div style="padding: 2rem; text-align: center; font-family: Arial, sans-serif;">
+      <h1>BramsStore</h1>
+      <p>Esta aplicación requiere JavaScript para funcionar correctamente.</p>
+      <p>Por favor, habilita JavaScript en tu navegador y recarga la página.</p>
+    </div>
+  </noscript>
+  
+  <div id="root"></div>
+  
+  <!-- Google Analytics (reemplaza GA_MEASUREMENT_ID con tu ID real) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'GA_MEASUREMENT_ID');
+  </script>
+</body>
+</html>
