@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ShoppingCart, User, Menu, Plus, Edit, Trash2, Monitor, Smartphone, Laptop, Headphones, Shirt, Settings, Star, DollarSign, Upload, Save, CreditCard, Truck } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, Smartphone, Laptop, Headphones, Shirt, Settings, Star, Truck, CreditCard, Trash2 } from 'lucide-react';
 
 const BramsStore = () => {
   // Estado para productos
@@ -77,22 +77,8 @@ const BramsStore = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
-  const [exchangeRate, setExchangeRate] = useState(540);
+  const [exchangeRate] = useState(540);
   const [showCheckout, setShowCheckout] = useState(false);
-  
-  // Estados para administración
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [newProduct, setNewProduct] = useState({
-    name: '',
-    category: 'accesorios',
-    price: '',
-    image: '',
-    description: '',
-    stock: '',
-    featured: false,
-    sku: ''
-  });
 
   // Estados para checkout
   const [customerInfo, setCustomerInfo] = useState({
@@ -110,7 +96,7 @@ const BramsStore = () => {
     { id: 'smartphones', name: 'Smartphones', icon: Smartphone },
     { id: 'laptops', name: 'Laptops', icon: Laptop },
     { id: 'accesorios', name: 'Accesorios', icon: Headphones },
-    { id: 'software', name: 'Software', icon: Monitor },
+    { id: 'software', name: 'Software', icon: Settings },
     { id: 'servicios', name: 'Servicios', icon: Settings },
     { id: 'ropa', name: 'Ropa', icon: Shirt }
   ];
@@ -172,71 +158,6 @@ const BramsStore = () => {
         item.id === productId ? { ...item, quantity } : item
       )
     );
-  };
-
-  // Funciones de administración
-  const handleAddProduct = () => {
-    if (newProduct.name && newProduct.price) {
-      const product = {
-        ...newProduct,
-        id: Math.max(...products.map(p => p.id)) + 1,
-        price: parseInt(newProduct.price),
-        stock: parseInt(newProduct.stock) || 0
-      };
-      setProducts(prev => [...prev, product]);
-      setNewProduct({
-        name: '',
-        category: 'accesorios',
-        price: '',
-        image: '',
-        description: '',
-        stock: '',
-        featured: false,
-        sku: ''
-      });
-      alert('Producto agregado exitosamente!');
-    }
-  };
-
-  const handleEditProduct = (product) => {
-    setEditingProduct({ ...product });
-  };
-
-  const handleUpdateProduct = () => {
-    setProducts(prev =>
-      prev.map(p => p.id === editingProduct.id ? editingProduct : p)
-    );
-    setEditingProduct(null);
-    alert('Producto actualizado exitosamente!');
-  };
-
-  const handleDeleteProduct = (id) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
-      setProducts(prev => prev.filter(p => p.id !== id));
-    }
-  };
-
-  // Simular subida de imagen
-  const handleImageUpload = (setter, currentProduct = null) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const imageUrl = e.target.result;
-          if (currentProduct) {
-            setter(prev => ({ ...prev, image: imageUrl }));
-          } else {
-            setter(prev => ({ ...prev, image: imageUrl }));
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-    input.click();
   };
 
   // Procesar pago
@@ -305,32 +226,14 @@ const BramsStore = () => {
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => addToCart(product)}
-            disabled={product.stock === 0}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-orange-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            {product.stock === 0 ? 'Agotado' : 'Agregar'}
-          </button>
-          {isAdmin && (
-            <div className="flex gap-1">
-              <button
-                onClick={() => handleEditProduct(product)}
-                className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                <Edit className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDeleteProduct(product.id)}
-                className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
+        <button
+          onClick={() => addToCart(product)}
+          disabled={product.stock === 0}
+          className="w-full bg-gradient-to-r from-blue-500 to-orange-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+        >
+          <ShoppingCart className="w-4 h-4 mr-2" />
+          {product.stock === 0 ? 'Agotado' : 'Agregar al Carrito'}
+        </button>
       </div>
     </div>
   );
@@ -456,125 +359,6 @@ const BramsStore = () => {
           <p className="text-gray-500 text-lg">No se encontraron productos</p>
         </div>
       )}
-    </div>
-  );
-
-  // Vista de administración
-  const AdminView = () => (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl shadow-lg">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Panel de Administración - BramsStore</h2>
-        
-        {/* Agregar producto */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <input
-            type="text"
-            placeholder="Nombre del producto"
-            value={newProduct.name}
-            onChange={(e) => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="text"
-            placeholder="SKU/Código del producto"
-            value={newProduct.sku}
-            onChange={(e) => setNewProduct(prev => ({ ...prev, sku: e.target.value }))}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-          <select
-            value={newProduct.category}
-            onChange={(e) => setNewProduct(prev => ({ ...prev, category: e.target.value }))}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            {categories.slice(1).map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            placeholder="Precio en colones"
-            value={newProduct.price}
-            onChange={(e) => setNewProduct(prev => ({ ...prev, price: e.target.value }))}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="number"
-            placeholder="Stock disponible"
-            value={newProduct.stock}
-            onChange={(e) => setNewProduct(prev => ({ ...prev, stock: e.target.value }))}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-          <div className="flex gap-2">
-            <input
-              type="url"
-              placeholder="URL de imagen"
-              value={newProduct.image}
-              onChange={(e) => setNewProduct(prev => ({ ...prev, image: e.target.value }))}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              onClick={() => handleImageUpload(setNewProduct)}
-              className="bg-gray-500 text-white px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center"
-            >
-              <Upload className="w-4 h-4" />
-            </button>
-          </div>
-          <textarea
-            placeholder="Descripción detallada del producto"
-            value={newProduct.description}
-            onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
-            className="md:col-span-2 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-24 resize-none"
-          />
-        </div>
-        
-        <div className="flex items-center gap-4 mb-4">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={newProduct.featured}
-              onChange={(e) => setNewProduct(prev => ({ ...prev, featured: e.target.checked }))}
-              className="mr-2"
-            />
-            Producto destacado
-          </label>
-        </div>
-
-        <button
-          onClick={handleAddProduct}
-          className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors flex items-center"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Agregar Producto
-        </button>
-      </div>
-
-      {/* Configuración de tipo de cambio */}
-      <div className="bg-white p-6 rounded-xl shadow-lg">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Configuración de Tipo de Cambio</h3>
-        <div className="flex items-center gap-4">
-          <DollarSign className="w-5 h-5 text-green-500" />
-          <input
-            type="number"
-            value={exchangeRate}
-            onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 540)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            step="0.01"
-          />
-          <span className="text-gray-600">Colones por USD</span>
-        </div>
-      </div>
-
-      {/* Lista de productos para editar */}
-      <div>
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Inventario Actual ({products.length} productos)</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </div>
     </div>
   );
 
@@ -732,90 +516,6 @@ const BramsStore = () => {
     </div>
   );
 
-  // Modal de edición
-  const EditModal = () => editingProduct && (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-bold mb-4">Editar Producto</h3>
-        <div className="space-y-4">
-          <input
-            type="text"
-            value={editingProduct.name}
-            onChange={(e) => setEditingProduct(prev => ({ ...prev, name: e.target.value }))}
-            className="w-full px-4 py-2 border rounded-lg"
-            placeholder="Nombre"
-          />
-          <input
-            type="text"
-            value={editingProduct.sku}
-            onChange={(e) => setEditingProduct(prev => ({ ...prev, sku: e.target.value }))}
-            className="w-full px-4 py-2 border rounded-lg"
-            placeholder="SKU"
-          />
-          <input
-            type="number"
-            value={editingProduct.price}
-            onChange={(e) => setEditingProduct(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
-            className="w-full px-4 py-2 border rounded-lg"
-            placeholder="Precio"
-          />
-          <input
-            type="number"
-            value={editingProduct.stock}
-            onChange={(e) => setEditingProduct(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
-            className="w-full px-4 py-2 border rounded-lg"
-            placeholder="Stock"
-          />
-          <div className="flex gap-2">
-            <input
-              type="url"
-              value={editingProduct.image}
-              onChange={(e) => setEditingProduct(prev => ({ ...prev, image: e.target.value }))}
-              className="flex-1 px-4 py-2 border rounded-lg"
-              placeholder="URL de imagen"
-            />
-            <button
-              onClick={() => handleImageUpload(setEditingProduct, editingProduct)}
-              className="bg-gray-500 text-white px-3 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              <Upload className="w-4 h-4" />
-            </button>
-          </div>
-          <textarea
-            value={editingProduct.description}
-            onChange={(e) => setEditingProduct(prev => ({ ...prev, description: e.target.value }))}
-            className="w-full px-4 py-2 border rounded-lg h-20 resize-none"
-            placeholder="Descripción"
-          />
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={editingProduct.featured}
-              onChange={(e) => setEditingProduct(prev => ({ ...prev, featured: e.target.checked }))}
-              className="mr-2"
-            />
-            Producto destacado
-          </label>
-        </div>
-        <div className="flex gap-2 mt-6">
-          <button
-            onClick={handleUpdateProduct}
-            className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 flex items-center justify-center"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Guardar
-          </button>
-          <button
-            onClick={() => setEditingProduct(null)}
-            className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600"
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
@@ -853,13 +553,8 @@ const BramsStore = () => {
               >
                 Productos
               </button>
-              <button
-                onClick={() => setIsAdmin(!isAdmin)}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isAdmin ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-blue-600'
-                }`}
-              >
-                {isAdmin ? 'Salir Admin' : 'Admin'}
+              <button className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+                Contacto
               </button>
             </nav>
 
@@ -888,11 +583,7 @@ const BramsStore = () => {
         {showCheckout && <CheckoutView />}
         {!showCheckout && currentView === 'home' && <HomeView />}
         {!showCheckout && currentView === 'products' && <ProductsView />}
-        {!showCheckout && isAdmin && <AdminView />}
       </main>
-
-      {/* Edit Modal */}
-      <EditModal />
     </div>
   );
 };
