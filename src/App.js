@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Star, Truck } from 'lucide-react';
+import { ShoppingCart, Star, Truck } from 'lucide-react';
 
 const BramsStore = () => {
   const [products, setProducts] = useState([]);
@@ -7,39 +7,39 @@ const BramsStore = () => {
   const [currentView, setCurrentView] = useState('home');
   const [loading, setLoading] = useState(true);
 
-  // Productos básicos de fallback
-  const fallbackProducts = [
-    {
-      id: "1",
-      name: "iPhone 15 Pro",
-      description: "Último modelo con chip A17 Pro",
-      price: 650000,
-      image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop",
-      stock: 10,
-      featured: true
-    },
-    {
-      id: "2", 
-      name: "MacBook Pro 14\"",
-      description: "M3 chip, 16GB RAM, 512GB SSD",
-      price: 1200000,
-      image: "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500&h=500&fit=crop",
-      stock: 5,
-      featured: true
-    },
-    {
-      id: "3",
-      name: "AirPods Pro 2", 
-      description: "Cancelación de ruido activa",
-      price: 125000,
-      image: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=500&h=500&fit=crop",
-      stock: 15,
-      featured: false
-    }
-  ];
-
   // Cargar productos
   useEffect(() => {
+    // Productos básicos de fallback
+    const fallbackProducts = [
+      {
+        id: "1",
+        name: "iPhone 15 Pro",
+        description: "Último modelo con chip A17 Pro",
+        price: 650000,
+        image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop",
+        stock: 10,
+        featured: true
+      },
+      {
+        id: "2", 
+        name: "MacBook Pro 14\"",
+        description: "M3 chip, 16GB RAM, 512GB SSD",
+        price: 1200000,
+        image: "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500&h=500&fit=crop",
+        stock: 5,
+        featured: true
+      },
+      {
+        id: "3",
+        name: "AirPods Pro 2", 
+        description: "Cancelación de ruido activa",
+        price: 125000,
+        image: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=500&h=500&fit=crop",
+        stock: 15,
+        featured: false
+      }
+    ];
+
     const loadProducts = async () => {
       try {
         setLoading(true);
@@ -72,7 +72,7 @@ const BramsStore = () => {
     };
 
     loadProducts();
-  }, []);
+  }, []); // Sin dependencias problemáticas
 
   const formatPrice = (price) => `₡${price.toLocaleString()}`;
 
@@ -155,7 +155,7 @@ const BramsStore = () => {
       {loading && (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <p className="mt-2">Cargando productos...</p>
+          <p className="mt-2">Cargando productos desde GitHub...</p>
         </div>
       )}
 
@@ -215,7 +215,7 @@ const BramsStore = () => {
           <p className="text-gray-500">Tu carrito está vacío</p>
           <button
             onClick={() => setCurrentView('products')}
-            className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg"
+            className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
           >
             Continuar Comprando
           </button>
@@ -233,7 +233,7 @@ const BramsStore = () => {
                 <span>Cantidad: {item.quantity}</span>
                 <button
                   onClick={() => removeFromCart(item.id)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 hover:text-red-700 ml-2"
                 >
                   Eliminar
                 </button>
@@ -242,16 +242,17 @@ const BramsStore = () => {
           ))}
           
           <div className="border-t pt-4">
-            <div className="flex justify-between text-xl font-bold">
+            <div className="flex justify-between text-xl font-bold mb-4">
               <span>Total:</span>
               <span>{formatPrice(cartTotal)}</span>
             </div>
             <button
               onClick={() => {
-                alert(`Pedido procesado por ${formatPrice(cartTotal)}!`);
+                alert(`¡Pedido procesado exitosamente!\n\nTotal: ${formatPrice(cartTotal)}\n\nNúmero de pedido: BS-${Date.now()}\n\nRecibirás un email de confirmación.`);
                 setCart([]);
+                setCurrentView('home');
               }}
-              className="w-full mt-4 bg-green-500 text-white py-3 rounded-lg font-bold"
+              className="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600"
             >
               Procesar Pedido
             </button>
