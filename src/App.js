@@ -584,6 +584,139 @@ Recibirás un email de confirmación pronto.`);
             <Star className="w-3 h-3 mr-1" />
             Destacado
           </div>
+        )}
+        <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
+          Stock: {product.inventory.available}
+        </div>
+      </div>
+      <div className="p-4">
+        <div className="flex justify-between items-start mb-2">
+          <h3 className="font-bold text-lg text-gray-800">{product.name}</h3>
+          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            {product.sku}
+          </span>
+        </div>
+        <p className="text-gray-600 text-sm mb-3">{product.description}</p>
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <div className="text-2xl font-bold text-blue-600">
+              {formatPrice(product.pricing.price)}
+            </div>
+            <div className="text-sm text-gray-500">
+              {formatPrice(product.pricing.price, 'USD')}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-gray-500">Ventas: {product.sales.totalSold}</div>
+            <div className="text-xs text-yellow-500">⭐ {product.sales.averageRating}</div>
+          </div>
+        </div>
+        <button
+          onClick={() => addToCart(product)}
+          disabled={product.inventory.available === 0}
+          className="w-full bg-gradient-to-r from-blue-500 to-orange-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+        >
+          <ShoppingCart className="w-4 h-4 mr-2" />
+          {product.inventory.available === 0 ? 'Agotado' : 'Agregar al Carrito'}
+        </button>
+      </div>
+    </div>
+  );
+
+  // Vista principal
+  const HomeView = () => (
+    <div className="space-y-8">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 via-orange-500 to-blue-700 text-white rounded-2xl p-8 md:p-12">
+        <div className="max-w-2xl">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+            Bienvenido a
+            <span className="block bg-gradient-to-r from-orange-300 to-yellow-400 bg-clip-text text-transparent">
+              BramsStore
+            </span>
+          </h1>
+          <p className="text-xl mb-6 text-blue-100">
+            Tu tienda de confianza para tecnología, accesorios, software, servicios técnicos y más.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <button
+              onClick={() => setCurrentView('products')}
+              className="bg-white text-blue-600 px-8 py-3 rounded-xl font-bold hover:bg-gray-100 transition-colors"
+            >
+              Explorar Productos
+            </button>
+            <div className="flex items-center text-blue-100 text-sm">
+              <div className={`w-2 h-2 rounded-full mr-2 ${apiStatus.isOnline ? 'bg-green-400' : 'bg-red-400'}`}></div>
+              <span>Conectado al sistema enterprise</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Estado de conexión y sync */}
+      <div className="bg-white p-4 rounded-xl shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center text-sm text-gray-600">
+              {apiStatus.isOnline ? (
+                <Wifi className="w-4 h-4 text-green-500 mr-1" />
+              ) : (
+                <WifiOff className="w-4 h-4 text-red-500 mr-1" />
+              )}
+              <span>{apiStatus.isOnline ? 'Online' : 'Offline'}</span>
+            </div>
+            
+            <div className="flex items-center text-sm text-gray-600">
+              <span>Última sync: {formatTimeAgo(apiStatus.lastSync)}</span>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleManualSync}
+            disabled={apiStatus.syncing}
+            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              apiStatus.syncing 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+            }`}
+          >
+            <RefreshCw className={`w-4 h-4 mr-1 ${apiStatus.syncing ? 'animate-spin' : ''}`} />
+            {apiStatus.syncing ? 'Sincronizando...' : 'Sync GitHub'}
+          </button>
+        </div>
+      </div>
+
+      {/* Loading o error */}
+      {enterpriseData.loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader className="w-8 h-8 animate-spin text-blue-500 mr-3" />
+          <span className="text-gray-600">Cargando productos desde GitHub...</span>
+        </div>
+      )}
+
+      {enterpriseData.error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+          <div className="flex items-center">
+            <AlertTriangle className="w-6 h-6 text-red-500 mr-3" />
+            <div>
+              <h3 className="font-semibold text-red-800">Error de Conexión</h3>
+              <p className="text-red-600">{enterpriseData.error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Productos destacados desde GitHub */}
+      {!enterpriseData.loading && !enterpriseData.error && enterpriseData.products.length > 0 && (
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-6">
+            Productos Destacados (GitHub Enterprise)
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {enterpriseData.products.filter(p => p.status.featured).map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
         </div>
       )}
 
@@ -977,136 +1110,3 @@ Recibirás un email de confirmación pronto.`);
 };
 
 export default BramsStore;
-        )}
-        <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
-          Stock: {product.inventory.available}
-        </div>
-      </div>
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-bold text-lg text-gray-800">{product.name}</h3>
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-            {product.sku}
-          </span>
-        </div>
-        <p className="text-gray-600 text-sm mb-3">{product.description}</p>
-        <div className="flex justify-between items-center mb-3">
-          <div>
-            <div className="text-2xl font-bold text-blue-600">
-              {formatPrice(product.pricing.price)}
-            </div>
-            <div className="text-sm text-gray-500">
-              {formatPrice(product.pricing.price, 'USD')}
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-xs text-gray-500">Ventas: {product.sales.totalSold}</div>
-            <div className="text-xs text-yellow-500">⭐ {product.sales.averageRating}</div>
-          </div>
-        </div>
-        <button
-          onClick={() => addToCart(product)}
-          disabled={product.inventory.available === 0}
-          className="w-full bg-gradient-to-r from-blue-500 to-orange-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-        >
-          <ShoppingCart className="w-4 h-4 mr-2" />
-          {product.inventory.available === 0 ? 'Agotado' : 'Agregar al Carrito'}
-        </button>
-      </div>
-    </div>
-  );
-
-  // Vista principal
-  const HomeView = () => (
-    <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 via-orange-500 to-blue-700 text-white rounded-2xl p-8 md:p-12">
-        <div className="max-w-2xl">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
-            Bienvenido a
-            <span className="block bg-gradient-to-r from-orange-300 to-yellow-400 bg-clip-text text-transparent">
-              BramsStore
-            </span>
-          </h1>
-          <p className="text-xl mb-6 text-blue-100">
-            Tu tienda de confianza para tecnología, accesorios, software, servicios técnicos y más.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <button
-              onClick={() => setCurrentView('products')}
-              className="bg-white text-blue-600 px-8 py-3 rounded-xl font-bold hover:bg-gray-100 transition-colors"
-            >
-              Explorar Productos
-            </button>
-            <div className="flex items-center text-blue-100 text-sm">
-              <div className={`w-2 h-2 rounded-full mr-2 ${apiStatus.isOnline ? 'bg-green-400' : 'bg-red-400'}`}></div>
-              <span>Conectado al sistema enterprise</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Estado de conexión y sync */}
-      <div className="bg-white p-4 rounded-xl shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center text-sm text-gray-600">
-              {apiStatus.isOnline ? (
-                <Wifi className="w-4 h-4 text-green-500 mr-1" />
-              ) : (
-                <WifiOff className="w-4 h-4 text-red-500 mr-1" />
-              )}
-              <span>{apiStatus.isOnline ? 'Online' : 'Offline'}</span>
-            </div>
-            
-            <div className="flex items-center text-sm text-gray-600">
-              <span>Última sync: {formatTimeAgo(apiStatus.lastSync)}</span>
-            </div>
-          </div>
-          
-          <button
-            onClick={handleManualSync}
-            disabled={apiStatus.syncing}
-            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              apiStatus.syncing 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-            }`}
-          >
-            <RefreshCw className={`w-4 h-4 mr-1 ${apiStatus.syncing ? 'animate-spin' : ''}`} />
-            {apiStatus.syncing ? 'Sincronizando...' : 'Sync GitHub'}
-          </button>
-        </div>
-      </div>
-
-      {/* Loading o error */}
-      {enterpriseData.loading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader className="w-8 h-8 animate-spin text-blue-500 mr-3" />
-          <span className="text-gray-600">Cargando productos desde GitHub...</span>
-        </div>
-      )}
-
-      {enterpriseData.error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-          <div className="flex items-center">
-            <AlertTriangle className="w-6 h-6 text-red-500 mr-3" />
-            <div>
-              <h3 className="font-semibold text-red-800">Error de Conexión</h3>
-              <p className="text-red-600">{enterpriseData.error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Productos destacados desde GitHub */}
-      {!enterpriseData.loading && !enterpriseData.error && enterpriseData.products.length > 0 && (
-        <div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-6">
-            Productos Destacados (GitHub Enterprise)
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {enterpriseData.products.filter(p => p.status.featured).map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div
