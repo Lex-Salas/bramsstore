@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Search, ShoppingCart, User, Menu, X, Plus, Edit, Trash2, Monitor, Smartphone, Laptop, Headphones, Shirt, Settings, Star, DollarSign, Upload, Save, CreditCard, MapPin, Truck } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, ShoppingCart, User, Menu, Plus, Edit, Trash2, Monitor, Smartphone, Laptop, Headphones, Shirt, Settings, Star, DollarSign, Upload, Save, CreditCard, Truck } from 'lucide-react';
 
 const BramsStore = () => {
   // Estado para productos
@@ -77,7 +77,6 @@ const BramsStore = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(540);
   const [showCheckout, setShowCheckout] = useState(false);
   
