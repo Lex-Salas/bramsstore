@@ -1,431 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ShoppingCart, User, Menu, Smartphone, Laptop, Headphones, Shirt, Settings, Star, Truck, CreditCard, Trash2, Loader, AlertTriangle, CheckCircle, Wifi, WifiOff, RefreshCw } from 'lucide-react';
-
-// ===================================
-// BRAMSSTORE API MANAGER - CORREGIDO
-// ===================================
-
-class BramsStoreAPI {
-  constructor(config = {}) {
-    this.config = {
-      baseURL: 'https://raw.githubusercontent.com/Lex-Salas/bramsstore-data/main',
-      fallbackURL: 'https://api.github.com/repos/Lex-Salas/bramsstore-data/contents',
-      debug: config.debug !== false, // Activar debug por defecto
-      timeout: config.timeout || 15000, // 15 segundos timeout
-      retryAttempts: config.retryAttempts || 2,
-      ...config
-    };
-
-    this.cache = new Map();
-    this.eventListeners = new Map();
-    this.isOnline = navigator.onLine;
-    this.lastSync = null;
-
-    this.init();
-  }
-
-  init() {
-    console.log('🚀 BramsStore API inicializado');
-    console.log('📍 Base URL:', this.config.baseURL);
-    
-    // Configurar eventos de conectividad
-    window.addEventListener('online', () => this.handleOnlineStatus(true));
-    window.addEventListener('offline', () => this.handleOnlineStatus(false));
-  }
-
-  handleOnlineStatus(isOnline) {
-    this.isOnline = isOnline;
-    console.log(`🌐 Estado de conexión: ${isOnline ? 'Online' : 'Offline'}`);
-    this.emit('connection-changed', { isOnline });
-  }
-
-  // Sistema de eventos
-  on(event, callback) {
-    if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, []);
-    }
-    this.eventListeners.get(event).push(callback);
-  }
-
-  emit(event, data = null) {
-    if (this.eventListeners.has(event)) {
-      this.eventListeners.get(event).forEach(callback => {
-        try {
-          callback(data);
-        } catch (error) {
-          console.error(`❌ Error en evento ${event}:`, error);
-        }
-      });
-    }
-  }
-
-  // Obtener productos con múltiples fallbacks
-  async getProducts(forceRefresh = false) {
-    const cacheKey = 'products';
-    
-    if (!forceRefresh && this.isCacheValid(cacheKey)) {
-      console.log('📦 Productos obtenidos desde cache');
-      return this.cache.get(cacheKey).data;
-    }
-
-    console.log('🔄 Intentando cargar productos desde GitHub...');
-
-    // Intentar múltiples métodos
-    const attempts = [
-      () => this.fetchProductsFromRaw(),
-      () => this.fetchProductsFromAPI(),
-      () => this.getProductsFallback()
-    ];
-
-    for (let i = 0; i < attempts.length; i++) {
-      try {
-        console.log(`📡 Intento ${i + 1}/3...`);
-        const data = await attempts[i]();
-        
-        if (data && data.products && data.products.length > 0) {
-          this.cache.set(cacheKey, {
-            data,
-            timestamp: Date.now(),
-            ttl: 300000 // 5 minutos
-          });
-
-          this.lastSync = new Date().toISOString();
-          this.emit('products-updated', data);
-          
-          console.log('✅ Productos cargados exitosamente:', data.products.length);
-          return data;
-        }
-      } catch (error) {
-        console.warn(`⚠️ Intento ${i + 1} falló:`, error.message);
-        if (i === attempts.length - 1) {
-          // Último intento falló
-          this.emit('api-error', { type: 'products', error });
-          throw new Error('No se pudieron cargar los productos desde ninguna fuente');
-        }
-      }
-    }
-  }
-
-  // Método 1: Fetch directo desde Raw GitHub
-  async fetchProductsFromRaw() {
-    const url = `${this.config.baseURL}/products.json`;
-    console.log('📡 Intentando Raw GitHub:', url);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
-
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
-        },
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('✅ Raw GitHub exitoso');
-      return data;
-
-    } catch (error) {
-      clearTimeout(timeoutId);
-      throw error;
-    }
-  }
-
-  // Método 2: GitHub API
-  async fetchProductsFromAPI() {
-    const url = `${this.config.fallbackURL}/products.json`;
-    console.log('📡 Intentando GitHub API:', url);
-    
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'BramsStore-App'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
-    }
-
-    const apiData = await response.json();
-    const content = atob(apiData.content);
-    const data = JSON.parse(content);
-    
-    console.log('✅ GitHub API exitoso');
-    return data;
-  }
-
-  // Método 3: Productos de fallback (hardcodeados)
-  async getProductsFallback() {
-    console.log('🔄 Usando productos de fallback...');
-    
-    // Productos de fallback basados en la estructura enterprise
-    const fallbackData = {
-      metadata: {
-        version: "1.0.0",
-        lastUpdated: new Date().toISOString(),
-        totalProducts: 3,
-        totalValue: 1975000,
-        currency: "CRC",
-        syncStatus: "fallback"
-      },
-      products: [
-        {
-          id: "prod_001",
-          sku: "IP15P-128",
-          name: "iPhone 15 Pro",
-          slug: "iphone-15-pro-128gb",
-          description: "Último modelo con chip A17 Pro, 128GB de almacenamiento, cámara profesional",
-          shortDescription: "iPhone 15 Pro con chip A17 Pro",
-          category: {
-            id: "smartphones",
-            name: "Smartphones",
-            slug: "smartphones"
-          },
-          brand: "Apple",
-          model: "iPhone 15 Pro",
-          pricing: {
-            cost: 500000,
-            price: 650000,
-            currency: "CRC",
-            profit: 150000,
-            profitMargin: 23.08
-          },
-          inventory: {
-            stock: 15,
-            reserved: 2,
-            available: 13,
-            lowStockAlert: true,
-            reorderLevel: 5,
-            maxStock: 50
-          },
-          media: {
-            primaryImage: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop",
-            images: ["https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop"]
-          },
-          specifications: {
-            storage: "128GB",
-            ram: "8GB",
-            screen: "6.1 pulgadas",
-            camera: "48MP"
-          },
-          sales: {
-            totalSold: 45,
-            revenue: 29250000,
-            averageRating: 4.8,
-            reviewCount: 23
-          },
-          status: {
-            active: true,
-            featured: true,
-            inStock: true,
-            visibility: "public"
-          },
-          timestamps: {
-            created: "2024-12-01T10:00:00.000Z",
-            updated: new Date().toISOString()
-          }
-        },
-        {
-          id: "prod_002",
-          sku: "MBP14-M3",
-          name: "MacBook Pro 14\"",
-          slug: "macbook-pro-14-m3",
-          description: "M3 chip, 16GB RAM, 512GB SSD, pantalla Retina",
-          shortDescription: "MacBook Pro 14\" con chip M3",
-          category: {
-            id: "laptops",
-            name: "Laptops",
-            slug: "laptops"
-          },
-          brand: "Apple",
-          model: "MacBook Pro 14",
-          pricing: {
-            cost: 900000,
-            price: 1200000,
-            currency: "CRC",
-            profit: 300000,
-            profitMargin: 25.0
-          },
-          inventory: {
-            stock: 8,
-            reserved: 1,
-            available: 7,
-            lowStockAlert: true,
-            reorderLevel: 3,
-            maxStock: 20
-          },
-          media: {
-            primaryImage: "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500&h=500&fit=crop",
-            images: ["https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500&h=500&fit=crop"]
-          },
-          specifications: {
-            processor: "Apple M3",
-            ram: "16GB",
-            storage: "512GB SSD",
-            screen: "14.2 pulgadas Retina"
-          },
-          sales: {
-            totalSold: 23,
-            revenue: 27600000,
-            averageRating: 4.9,
-            reviewCount: 18
-          },
-          status: {
-            active: true,
-            featured: true,
-            inStock: true,
-            visibility: "public"
-          },
-          timestamps: {
-            created: "2024-11-15T09:00:00.000Z",
-            updated: new Date().toISOString()
-          }
-        },
-        {
-          id: "prod_003",
-          sku: "APP2-WHITE",
-          name: "AirPods Pro 2",
-          slug: "airpods-pro-2-white",
-          description: "Cancelación de ruido activa, estuche de carga MagSafe",
-          shortDescription: "AirPods Pro 2 con cancelación de ruido",
-          category: {
-            id: "accesorios",
-            name: "Accesorios",
-            slug: "accesorios"
-          },
-          brand: "Apple",
-          model: "AirPods Pro 2",
-          pricing: {
-            cost: 80000,
-            price: 125000,
-            currency: "CRC",
-            profit: 45000,
-            profitMargin: 36.0
-          },
-          inventory: {
-            stock: 25,
-            reserved: 3,
-            available: 22,
-            lowStockAlert: false,
-            reorderLevel: 10,
-            maxStock: 100
-          },
-          media: {
-            primaryImage: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=500&h=500&fit=crop",
-            images: ["https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=500&h=500&fit=crop"]
-          },
-          specifications: {
-            connectivity: "Bluetooth 5.3",
-            battery: "6 horas + 24h con estuche",
-            features: "Cancelación activa de ruido"
-          },
-          sales: {
-            totalSold: 78,
-            revenue: 9750000,
-            averageRating: 4.7,
-            reviewCount: 45
-          },
-          status: {
-            active: true,
-            featured: false,
-            inStock: true,
-            visibility: "public"
-          },
-          timestamps: {
-            created: "2024-10-20T11:00:00.000Z",
-            updated: new Date().toISOString()
-          }
-        }
-      ]
-    };
-
-    console.log('✅ Productos de fallback cargados');
-    return fallbackData;
-  }
-
-  // Crear nuevo pedido
-  async createOrder(orderData) {
-    try {
-      console.log('📝 Creando nuevo pedido:', orderData);
-      
-      const orderId = this.generateOrderId();
-      const orderNumber = this.generateOrderNumber();
-      
-      const newOrder = {
-        id: orderId,
-        orderNumber: orderNumber,
-        status: 'pending',
-        paymentStatus: 'pending',
-        shippingStatus: 'not_shipped',
-        ...orderData,
-        timestamps: {
-          created: new Date().toISOString(),
-          updated: new Date().toISOString()
-        }
-      };
-
-      this.emit('new-order-created', newOrder);
-      this.emit('order-notification', {
-        type: 'new_order',
-        message: `Nuevo pedido ${orderNumber} recibido`,
-        data: newOrder
-      });
-      
-      console.log('✅ Pedido creado exitosamente:', orderNumber);
-      
-      return {
-        success: true,
-        orderId: orderId,
-        orderNumber: orderNumber,
-        order: newOrder
-      };
-
-    } catch (error) {
-      console.error('❌ Error creando pedido:', error);
-      this.emit('api-error', { type: 'order', error });
-      throw error;
-    }
-  }
-
-  // Utilidades
-  isCacheValid(key) {
-    if (!this.cache.has(key)) return false;
-    const cached = this.cache.get(key);
-    return (Date.now() - cached.timestamp) < cached.ttl;
-  }
-
-  generateOrderId() {
-    return `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  generateOrderNumber() {
-    const year = new Date().getFullYear();
-    const timestamp = Date.now().toString().slice(-6);
-    return `BS-${year}-${timestamp}`;
-  }
-
-  getStatus() {
-    return {
-      isOnline: this.isOnline,
-      lastSync: this.lastSync,
-      cacheSize: this.cache.size
-    };
-  }
-}
-
-// ===================================
-// COMPONENTE PRINCIPAL BRAMSSTORE
-// ===================================
 
 const BramsStore = () => {
   // Estados principales
@@ -434,19 +8,9 @@ const BramsStore = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
   const [showCheckout, setShowCheckout] = useState(false);
-
-  // Estados de la API y datos enterprise
-  const [apiManager, setApiManager] = useState(null);
-  const [enterpriseData, setEnterpriseData] = useState({
-    products: [],
-    loading: true,
-    error: null
-  });
-  const [apiStatus, setApiStatus] = useState({
-    isOnline: navigator.onLine,
-    lastSync: null,
-    syncing: false
-  });
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Estados para checkout
   const [customerInfo, setCustomerInfo] = useState({
@@ -479,108 +43,96 @@ const BramsStore = () => {
     { id: 'transfer', name: 'Transferencia Bancaria', description: 'BAC, BCR, Banco Nacional' }
   ];
 
-  // Cargar productos desde GitHub
-  const loadProducts = useCallback(async (api = apiManager) => {
-    if (!api) return;
-
-    try {
-      setApiStatus(prev => ({ ...prev, syncing: true }));
-      setEnterpriseData(prev => ({ ...prev, loading: true, error: null }));
-
-      const data = await api.getProducts(true);
-      
-      setEnterpriseData({
-        products: data.products || [],
-        loading: false,
-        error: null
-      });
-
-      setApiStatus(prev => ({
-        ...prev,
-        syncing: false,
-        lastSync: new Date().toISOString()
-      }));
-
-    } catch (error) {
-      console.error('Error cargando productos:', error);
-      setEnterpriseData(prev => ({
-        ...prev,
-        loading: false,
-        error: error.message
-      }));
-      setApiStatus(prev => ({ ...prev, syncing: false }));
+  // Productos de fallback (siempre disponibles)
+  const fallbackProducts = [
+    {
+      id: "prod_001",
+      sku: "IP15P-128",
+      name: "iPhone 15 Pro",
+      description: "Último modelo con chip A17 Pro, 128GB de almacenamiento, cámara profesional",
+      category: { id: "smartphones", name: "Smartphones" },
+      pricing: { price: 650000, cost: 500000 },
+      inventory: { available: 13 },
+      media: { primaryImage: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop" },
+      sales: { totalSold: 45, averageRating: 4.8 },
+      status: { featured: true }
+    },
+    {
+      id: "prod_002",
+      sku: "MBP14-M3",
+      name: "MacBook Pro 14\"",
+      description: "M3 chip, 16GB RAM, 512GB SSD, pantalla Retina",
+      category: { id: "laptops", name: "Laptops" },
+      pricing: { price: 1200000, cost: 900000 },
+      inventory: { available: 7 },
+      media: { primaryImage: "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500&h=500&fit=crop" },
+      sales: { totalSold: 23, averageRating: 4.9 },
+      status: { featured: true }
+    },
+    {
+      id: "prod_003",
+      sku: "APP2-WHITE",
+      name: "AirPods Pro 2",
+      description: "Cancelación de ruido activa, estuche de carga MagSafe",
+      category: { id: "accesorios", name: "Accesorios" },
+      pricing: { price: 125000, cost: 80000 },
+      inventory: { available: 22 },
+      media: { primaryImage: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=500&h=500&fit=crop" },
+      sales: { totalSold: 78, averageRating: 4.7 },
+      status: { featured: false }
     }
-  }, [apiManager]);
+  ];
 
-  // ===================================
-  // INICIALIZACIÓN DE LA API - CORREGIDO
-  // ===================================
-
+  // Cargar productos
   useEffect(() => {
-    const initializeAPI = async () => {
+    const loadProducts = async () => {
       try {
-        const api = new BramsStoreAPI({
-          debug: true,
-          autoSync: true
-        });
-
-        // Configurar event listeners
-        api.on('products-updated', (data) => {
-          setEnterpriseData(prev => ({
-            ...prev,
-            products: data.products || [],
-            loading: false,
-            error: null
-          }));
-        });
-
-        api.on('connection-changed', ({ isOnline }) => {
-          setApiStatus(prev => ({ ...prev, isOnline }));
-        });
-
-        api.on('api-error', ({ type, error }) => {
-          setEnterpriseData(prev => ({
-            ...prev,
-            loading: false,
-            error: `Error cargando ${type}: ${error.message}`
-          }));
-        });
-
-        api.on('new-order-created', (order) => {
-          console.log('✅ Pedido creado y notificado al admin:', order.orderNumber);
-        });
-
-        setApiManager(api);
+        setLoading(true);
+        console.log('🔄 Intentando cargar desde GitHub...');
         
-        // Cargar productos iniciales
-        await loadProducts(api);
-
+        const response = await fetch('https://raw.githubusercontent.com/Lex-Salas/bramsstore-data/main/products.json');
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.products && data.products.length > 0) {
+            console.log('✅ Productos cargados desde GitHub:', data.products.length);
+            setProducts(data.products);
+            setError(null);
+          } else {
+            throw new Error('No products found');
+          }
+        } else {
+          throw new Error('GitHub fetch failed');
+        }
       } catch (error) {
-        console.error('Error inicializando API:', error);
-        setEnterpriseData(prev => ({
-          ...prev,
-          loading: false,
-          error: 'Error conectando con el servidor'
-        }));
+        console.log('⚠️ GitHub falló, usando productos locales');
+        setProducts(fallbackProducts);
+        setError('Usando productos locales - GitHub no disponible');
+      } finally {
+        setLoading(false);
       }
     };
 
-    initializeAPI();
-  }, [loadProducts]);
+    loadProducts();
+  }, []);
 
-  // Sync manual
-  const handleManualSync = () => {
-    if (apiManager) {
-      loadProducts();
-    }
+  // Crear pedido
+  const createOrder = async (orderData) => {
+    const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const orderNumber = `BS-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
+    
+    console.log('📝 Nuevo pedido creado:', orderNumber, orderData);
+    
+    return {
+      success: true,
+      orderId,
+      orderNumber,
+      order: { ...orderData, id: orderId, orderNumber }
+    };
   };
 
-  // ===================================
-  // FUNCIONES DE PRODUCTOS Y CARRITO
-  // ===================================
-
-  // Filtrar productos enterprise
-  const filteredProducts = enterpriseData.products.filter(product => {
+  // Filtrar productos
+  const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === 'all' || product.category.id === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -593,20 +145,6 @@ const BramsStore = () => {
       return `$${(price / exchangeRate).toFixed(2)}`;
     }
     return `₡${price.toLocaleString()}`;
-  };
-
-  // Formatear tiempo relativo
-  const formatTimeAgo = (timestamp) => {
-    if (!timestamp) return 'Nunca';
-    
-    const now = new Date();
-    const time = new Date(timestamp);
-    const diffInMinutes = Math.floor((now - time) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Ahora';
-    if (diffInMinutes < 60) return `${diffInMinutes}m`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
-    return `${Math.floor(diffInMinutes / 1440)}d`;
   };
 
   // Calcular total del carrito
@@ -645,10 +183,7 @@ const BramsStore = () => {
     );
   };
 
-  // ===================================
-  // PROCESO DE CHECKOUT INTEGRADO
-  // ===================================
-
+  // Proceso de checkout
   const handleCheckout = async () => {
     if (cart.length === 0) {
       alert('El carrito está vacío');
@@ -660,123 +195,34 @@ const BramsStore = () => {
       return;
     }
 
-    if (!apiManager) {
-      alert('Error: No hay conexión con el servidor');
-      return;
-    }
-
     try {
-      // Preparar datos del pedido según el formato enterprise
       const orderData = {
         customer: {
-          id: `cust_${Date.now()}`,
-          firstName: customerInfo.name.split(' ')[0],
-          lastName: customerInfo.name.split(' ').slice(1).join(' ') || '',
           fullName: customerInfo.name,
           email: customerInfo.email,
-          phone: customerInfo.phone,
-          document: '', // Se puede agregar después
-          type: 'regular'
-        },
-        billing: {
-          firstName: customerInfo.name.split(' ')[0],
-          lastName: customerInfo.name.split(' ').slice(1).join(' ') || '',
-          email: customerInfo.email,
-          phone: customerInfo.phone,
-          address: {
-            line1: customerInfo.address,
-            line2: null,
-            city: customerInfo.city,
-            state: customerInfo.city,
-            zipCode: customerInfo.postalCode,
-            country: 'CR',
-            countryName: 'Costa Rica'
-          }
-        },
-        shipping: {
-          firstName: customerInfo.name.split(' ')[0],
-          lastName: customerInfo.name.split(' ').slice(1).join(' ') || '',
-          phone: customerInfo.phone,
-          address: {
-            line1: customerInfo.address,
-            line2: null,
-            city: customerInfo.city,
-            state: customerInfo.city,
-            zipCode: customerInfo.postalCode,
-            country: 'CR',
-            countryName: 'Costa Rica'
-          },
-          method: 'standard',
-          methodName: 'Envío Estándar (3-5 días)',
-          cost: 5000,
-          estimatedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          trackingNumber: null,
-          carrier: 'Correos de Costa Rica'
+          phone: customerInfo.phone
         },
         items: cart.map((item, index) => ({
           id: `item_${index + 1}`,
           productId: item.id,
-          sku: item.sku,
           name: item.name,
-          image: item.media.primaryImage,
           quantity: item.quantity,
           unitPrice: item.pricing.price,
-          totalPrice: item.pricing.price * item.quantity,
-          cost: item.pricing.cost * item.quantity,
-          profit: (item.pricing.price - item.pricing.cost) * item.quantity,
-          specifications: item.specifications || {}
+          totalPrice: item.pricing.price * item.quantity
         })),
         pricing: {
           subtotal: cartTotal,
-          tax: 0,
-          taxRate: 0,
           shipping: 5000,
-          discount: 0,
-          discountCode: null,
           total: cartTotal + 5000,
-          currency: 'CRC',
-          totalCost: cart.reduce((sum, item) => sum + (item.pricing.cost * item.quantity), 0),
-          totalProfit: cart.reduce((sum, item) => sum + ((item.pricing.price - item.pricing.cost) * item.quantity), 0),
-          profitMargin: 0 // Se calculará después
+          currency: 'CRC'
         },
         payment: {
           method: customerInfo.paymentMethod,
-          methodName: paymentMethods.find(p => p.id === customerInfo.paymentMethod)?.name,
-          status: 'pending',
-          transactionId: null,
-          referenceNumber: null,
-          paidAt: null,
-          amount: cartTotal + 5000,
-          currency: 'CRC',
-          gateway: customerInfo.paymentMethod,
-          fees: 0
-        },
-        notes: {
-          customer: '',
-          internal: `Pedido desde www.bramsstore.com`,
-          admin: 'Nuevo pedido recibido desde la tienda online'
-        },
-        analytics: {
-          source: 'website',
-          campaign: null,
-          device: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop',
-          browser: navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Other',
-          referrer: document.referrer,
-          utm: {
-            source: null,
-            medium: 'organic',
-            campaign: null
-          }
+          methodName: paymentMethods.find(p => p.id === customerInfo.paymentMethod)?.name
         }
       };
 
-      // Calcular margen de ganancia
-      orderData.pricing.profitMargin = orderData.pricing.totalProfit > 0 
-        ? (orderData.pricing.totalProfit / orderData.pricing.subtotal) * 100 
-        : 0;
-
-      // Crear pedido usando la API enterprise
-      const result = await apiManager.createOrder(orderData);
+      const result = await createOrder(orderData);
       
       if (result.success) {
         alert(`¡Pedido procesado exitosamente! 🎉
@@ -785,10 +231,9 @@ Número de pedido: ${result.orderNumber}
 Total: ${formatPrice(orderData.pricing.total)}
 Método de pago: ${orderData.payment.methodName}
 
-El pedido aparecerá automáticamente en el panel de administración.
 Recibirás un email de confirmación pronto.`);
         
-        // Limpiar carrito y checkout
+        // Limpiar carrito
         setCart([]);
         setShowCheckout(false);
         setCustomerInfo({
@@ -808,11 +253,7 @@ Recibirás un email de confirmación pronto.`);
     }
   };
 
-  // ===================================
-  // COMPONENTES DE UI
-  // ===================================
-
-  // Componente de producto enterprise
+  // Componente de producto
   const ProductCard = ({ product }) => (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
       <div className="relative">
@@ -825,6 +266,32 @@ Recibirás un email de confirmación pronto.`);
           <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center">
             <Star className="w-3 h-3 mr-1" />
             Destacado
+          </div>
+        )}
+        <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
+          Stock: {product.inventory.available}
+        </div>
+      </div>
+      <div className="p-4">
+        <div className="flex justify-between items-start mb-2">
+          <h3 className="font-bold text-lg text-gray-800">{product.name}</h3>
+          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            {product.sku}
+          </span>
+        </div>
+        <p className="text-gray-600 text-sm mb-3">{product.description}</p>
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <div className="text-2xl font-bold text-blue-600">
+              {formatPrice(product.pricing.price)}
+            </div>
+            <div className="text-sm text-gray-500">
+              {formatPrice(product.pricing.price, 'USD')}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-gray-500">Ventas: {product.sales.totalSold}</div>
+            <div className="text-xs text-yellow-500">⭐ {product.sales.averageRating}</div>
           </div>
         </div>
         <button
@@ -842,7 +309,6 @@ Recibirás un email de confirmación pronto.`);
   // Vista principal
   const HomeView = () => (
     <div className="space-y-8">
-      {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 via-orange-500 to-blue-700 text-white rounded-2xl p-8 md:p-12">
         <div className="max-w-2xl">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
@@ -862,81 +328,42 @@ Recibirás un email de confirmación pronto.`);
               Explorar Productos
             </button>
             <div className="flex items-center text-blue-100 text-sm">
-              <div className={`w-2 h-2 rounded-full mr-2 ${apiStatus.isOnline ? 'bg-green-400' : 'bg-red-400'}`}></div>
-              <span>Conectado al sistema enterprise</span>
+              <div className="w-2 h-2 rounded-full mr-2 bg-green-400"></div>
+              <span>Sistema enterprise activo</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Estado de conexión y sync */}
-      <div className="bg-white p-4 rounded-xl shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center text-sm text-gray-600">
-              {apiStatus.isOnline ? (
-                <Wifi className="w-4 h-4 text-green-500 mr-1" />
-              ) : (
-                <WifiOff className="w-4 h-4 text-red-500 mr-1" />
-              )}
-              <span>{apiStatus.isOnline ? 'Online' : 'Offline'}</span>
-            </div>
-            
-            <div className="flex items-center text-sm text-gray-600">
-              <span>Última sync: {formatTimeAgo(apiStatus.lastSync)}</span>
-            </div>
-          </div>
-          
-          <button
-            onClick={handleManualSync}
-            disabled={apiStatus.syncing}
-            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              apiStatus.syncing 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-            }`}
-          >
-            <RefreshCw className={`w-4 h-4 mr-1 ${apiStatus.syncing ? 'animate-spin' : ''}`} />
-            {apiStatus.syncing ? 'Sincronizando...' : 'Sync GitHub'}
-          </button>
-        </div>
-      </div>
-
-      {/* Loading o error */}
-      {enterpriseData.loading && (
+      {loading && (
         <div className="flex items-center justify-center py-12">
           <Loader className="w-8 h-8 animate-spin text-blue-500 mr-3" />
-          <span className="text-gray-600">Cargando productos desde GitHub...</span>
+          <span className="text-gray-600">Cargando productos...</span>
         </div>
       )}
 
-      {enterpriseData.error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+      {error && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
           <div className="flex items-center">
-            <AlertTriangle className="w-6 h-6 text-red-500 mr-3" />
-            <div>
-              <h3 className="font-semibold text-red-800">Error de Conexión</h3>
-              <p className="text-red-600">{enterpriseData.error}</p>
-            </div>
+            <AlertTriangle className="w-5 h-5 text-yellow-500 mr-2" />
+            <span className="text-yellow-800">{error}</span>
           </div>
         </div>
       )}
 
-      {/* Productos destacados desde GitHub */}
-      {!enterpriseData.loading && !enterpriseData.error && enterpriseData.products.length > 0 && (
+      {!loading && products.length > 0 && (
         <div>
           <h2 className="text-3xl font-bold text-gray-800 mb-6">
-            Productos Destacados (GitHub Enterprise)
+            Productos Destacados
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {enterpriseData.products.filter(p => p.status.featured).map(product => (
+            {products.filter(p => p.status.featured).map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </div>
       )}
 
-      {/* Información de envío */}
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
         <div className="flex items-center mb-3">
           <Truck className="w-6 h-6 text-amber-600 mr-3" />
@@ -948,7 +375,6 @@ Recibirás un email de confirmación pronto.`);
         </p>
       </div>
 
-      {/* Categorías */}
       <div>
         <h2 className="text-3xl font-bold text-gray-800 mb-6">Categorías</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -973,32 +399,16 @@ Recibirás un email de confirmación pronto.`);
     </div>
   );
 
-  // Vista de productos enterprise
+  // Vista de productos
   const ProductsView = () => (
     <div className="space-y-6">
-      {/* Header con estado de sync */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Catálogo Enterprise</h2>
-        <div className="flex items-center space-x-3">
-          <div className="text-sm text-gray-600">
-            {enterpriseData.products.length} productos desde GitHub
-          </div>
-          <button
-            onClick={handleManualSync}
-            disabled={apiStatus.syncing}
-            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              apiStatus.syncing 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-            }`}
-          >
-            <RefreshCw className={`w-4 h-4 mr-1 ${apiStatus.syncing ? 'animate-spin' : ''}`} />
-            Sync
-          </button>
+        <h2 className="text-2xl font-bold text-gray-800">Catálogo de Productos</h2>
+        <div className="text-sm text-gray-600">
+          {products.length} productos disponibles
         </div>
       </div>
 
-      {/* Filtros */}
       <div className="bg-white p-6 rounded-xl shadow-lg">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
@@ -1027,28 +437,14 @@ Recibirás un email de confirmación pronto.`);
         </div>
       </div>
 
-      {/* Loading o error */}
-      {enterpriseData.loading && (
+      {loading && (
         <div className="flex items-center justify-center py-12">
           <Loader className="w-8 h-8 animate-spin text-blue-500 mr-3" />
-          <span className="text-gray-600">Cargando productos desde GitHub...</span>
+          <span className="text-gray-600">Cargando productos...</span>
         </div>
       )}
 
-      {enterpriseData.error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-          <div className="flex items-center">
-            <AlertTriangle className="w-6 h-6 text-red-500 mr-3" />
-            <div>
-              <h3 className="font-semibold text-red-800">Error de Conexión</h3>
-              <p className="text-red-600">{enterpriseData.error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Lista de productos enterprise */}
-      {!enterpriseData.loading && !enterpriseData.error && (
+      {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map(product => (
             <ProductCard key={product.id} product={product} />
@@ -1056,7 +452,7 @@ Recibirás un email de confirmación pronto.`);
         </div>
       )}
 
-      {!enterpriseData.loading && !enterpriseData.error && filteredProducts.length === 0 && (
+      {!loading && filteredProducts.length === 0 && (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No se encontraron productos</p>
         </div>
@@ -1064,11 +460,11 @@ Recibirás un email de confirmación pronto.`);
     </div>
   );
 
-  // Vista del carrito y checkout enterprise
+  // Vista del carrito
   const CheckoutView = () => (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-white p-6 rounded-xl shadow-lg">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Carrito de Compras Enterprise</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">Carrito de Compras</h2>
         
         {cart.length === 0 ? (
           <div className="text-center py-8">
@@ -1091,7 +487,6 @@ Recibirás un email de confirmación pronto.`);
                     <h3 className="font-semibold text-gray-800">{item.name}</h3>
                     <p className="text-gray-600 text-sm">{item.description}</p>
                     <p className="text-blue-600 font-bold">{formatPrice(item.pricing.price)}</p>
-                    <p className="text-xs text-gray-500">SKU: {item.sku}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -1118,32 +513,14 @@ Recibirás un email de confirmación pronto.`);
               ))}
             </div>
 
-            {/* Información de envío */}
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
               <div className="flex items-center mb-2">
                 <Truck className="w-5 h-5 text-amber-600 mr-2" />
                 <span className="font-semibold text-amber-800">Costo de Envío</span>
               </div>
               <p className="text-amber-700 text-sm">
-                Se agregará ₡5,000 de envío estándar (3-5 días) al total final.
+                Se agregará ₡5,000 de envío estándar al total final.
               </p>
-            </div>
-
-            {/* Estado de conexión API */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center">
-                {apiStatus.isOnline ? (
-                  <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                ) : (
-                  <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
-                )}
-                <span className="font-semibold text-blue-800">
-                  {apiStatus.isOnline 
-                    ? 'Conectado al sistema enterprise' 
-                    : 'Sin conexión - Pedido se procesará cuando se restablezca la conexión'
-                  }
-                </span>
-              </div>
             </div>
 
             <div className="border-t pt-4">
@@ -1157,7 +534,6 @@ Recibirás un email de confirmación pronto.`);
                 </div>
               </div>
 
-              {/* Formulario de información del cliente */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <input
                   type="text"
@@ -1199,7 +575,6 @@ Recibirás un email de confirmación pronto.`);
                 />
               </div>
 
-              {/* Métodos de pago */}
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Método de Pago</h3>
                 <div className="space-y-3">
@@ -1224,18 +599,11 @@ Recibirás un email de confirmación pronto.`);
 
               <button
                 onClick={handleCheckout}
-                disabled={!apiStatus.isOnline}
-                className="w-full bg-gradient-to-r from-blue-500 to-orange-500 text-white py-4 px-6 rounded-lg font-bold text-lg hover:from-blue-600 hover:to-orange-600 transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-blue-500 to-orange-500 text-white py-4 px-6 rounded-lg font-bold text-lg hover:from-blue-600 hover:to-orange-600 transition-all duration-300 flex items-center justify-center"
               >
                 <CreditCard className="w-6 h-6 mr-2" />
-                {apiStatus.isOnline ? 'Proceder al Pago Enterprise' : 'Sin conexión - Esperando...'}
+                Proceder al Pago
               </button>
-              
-              {!apiStatus.isOnline && (
-                <p className="text-center text-sm text-gray-500 mt-2">
-                  El pedido se procesará automáticamente cuando se restablezca la conexión
-                </p>
-              )}
             </div>
           </>
         )}
@@ -1243,13 +611,8 @@ Recibirás un email de confirmación pronto.`);
     </div>
   );
 
-  // ===================================
-  // RENDER PRINCIPAL
-  // ===================================
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
       <header className="bg-white shadow-lg sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -1262,13 +625,7 @@ Recibirás un email de confirmación pronto.`);
                   <h1 className="text-2xl font-bold">
                     <span className="text-blue-600">brams</span><span className="text-orange-500">store</span>
                   </h1>
-                  <p className="text-xs text-gray-500 flex items-center">
-                    www.bramsstore.com
-                    <span className="ml-2 flex items-center">
-                      <div className={`w-2 h-2 rounded-full mr-1 ${apiStatus.isOnline ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                      Enterprise
-                    </span>
-                  </p>
+                  <p className="text-xs text-gray-500">www.bramsstore.com • Enterprise</p>
                 </div>
               </div>
             </div>
@@ -1288,7 +645,7 @@ Recibirás un email de confirmación pronto.`);
                   currentView === 'products' ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-blue-600'
                 }`}
               >
-                Productos ({enterpriseData.products.length})
+                Productos ({products.length})
               </button>
               <button className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
                 Contacto
@@ -1315,7 +672,6 @@ Recibirás un email de confirmación pronto.`);
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {showCheckout && <CheckoutView />}
         {!showCheckout && currentView === 'home' && <HomeView />}
@@ -1326,28 +682,3 @@ Recibirás un email de confirmación pronto.`);
 };
 
 export default BramsStore;
-        )}
-        <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
-          Stock: {product.inventory.available}
-        </div>
-      </div>
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-bold text-lg text-gray-800">{product.name}</h3>
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-            {product.sku}
-          </span>
-        </div>
-        <p className="text-gray-600 text-sm mb-3">{product.description}</p>
-        <div className="flex justify-between items-center mb-3">
-          <div>
-            <div className="text-2xl font-bold text-blue-600">
-              {formatPrice(product.pricing.price)}
-            </div>
-            <div className="text-sm text-gray-500">
-              {formatPrice(product.pricing.price, 'USD')}
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-xs text-gray-500">Ventas: {product.sales.totalSold}</div>
-            <div className="text-xs text-yellow-500">⭐ {product.sales.averageRating}</div>
