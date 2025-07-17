@@ -220,15 +220,29 @@ const BramsStore = () => {
     );
   };
 
-  // Proceso de checkout
+  // Proceso de checkout mejorado
   const handleCheckout = async () => {
     if (cart.length === 0) {
       alert('El carrito está vacío');
       return;
     }
 
-    if (!customerInfo.name || !customerInfo.email || !customerInfo.phone) {
-      alert('Por favor completa la información requerida');
+    // Validación mejorada con alertas específicas
+    const missingFields = [];
+    if (!customerInfo.name.trim()) missingFields.push('Nombre completo');
+    if (!customerInfo.email.trim()) missingFields.push('Email');
+    if (!customerInfo.phone.trim()) missingFields.push('Teléfono');
+    if (!customerInfo.address.trim()) missingFields.push('Dirección');
+
+    if (missingFields.length > 0) {
+      alert(`Por favor completa los siguientes campos requeridos:\n• ${missingFields.join('\n• ')}`);
+      return;
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerInfo.email)) {
+      alert('Por favor ingresa un email válido');
       return;
     }
 
@@ -254,6 +268,7 @@ Recibirás un email de confirmación pronto.`);
       
       setCart([]);
       setShowCheckout(false);
+      setCurrentView('home'); // Regresar al inicio después del checkout
       setCustomerInfo({
         name: '',
         email: '',
@@ -323,6 +338,85 @@ Recibirás un email de confirmación pronto.`);
     </div>
   );
 
+  // Vista de contacto
+  const ContactView = () => (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="bg-white p-8 rounded-xl shadow-lg">
+        <h2 className="text-3xl font-bold text-gray-800 mb-6">Contacto</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Información de Contacto</h3>
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                  <User className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-800">BramsStore</p>
+                  <p className="text-gray-600">Tu tienda de confianza</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
+                  <Smartphone className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-800">WhatsApp</p>
+                  <p className="text-gray-600">+506 8888-8888</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                  <Settings className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-800">Soporte Técnico</p>
+                  <p className="text-gray-600">soporte@bramsstore.com</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Horarios de Atención</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Lunes - Viernes:</span>
+                <span className="font-semibold text-gray-800">8:00 AM - 6:00 PM</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Sábados:</span>
+                <span className="font-semibold text-gray-800">9:00 AM - 4:00 PM</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Domingos:</span>
+                <span className="font-semibold text-gray-800">Cerrado</span>
+              </div>
+            </div>
+            
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <p className="text-blue-800 text-sm">
+                <strong>¿Necesitas ayuda?</strong> Nuestro equipo está listo para ayudarte con cualquier consulta sobre productos, pedidos o soporte técnico.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => setCurrentView('home')}
+            className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Volver al Inicio
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   // Vista principal
   const HomeView = () => (
     <div className="space-y-8">
@@ -349,6 +443,29 @@ Recibirás un email de confirmación pronto.`);
               <span>Conectado al sistema enterprise</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Categorías movidas aquí - debajo del banner */}
+      <div>
+        <h2 className="text-3xl font-bold text-gray-800 mb-6">Categorías</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {categories.slice(1).map(category => {
+            const Icon = category.icon;
+            return (
+              <button
+                key={category.id}
+                onClick={() => {
+                  setSelectedCategory(category.id);
+                  setCurrentView('products');
+                }}
+                className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group hover:-translate-y-1"
+              >
+                <Icon className="w-8 h-8 mx-auto mb-3 text-blue-500 group-hover:text-orange-500 transition-colors" />
+                <span className="font-semibold text-gray-700">{category.name}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -425,28 +542,6 @@ Recibirás un email de confirmación pronto.`);
           <strong>Importante:</strong> Los precios mostrados no incluyen el costo de envío. 
           El envío se calculará y cobrará por separado según la ubicación de entrega.
         </p>
-      </div>
-
-      <div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-6">Categorías</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {categories.slice(1).map(category => {
-            const Icon = category.icon;
-            return (
-              <button
-                key={category.id}
-                onClick={() => {
-                  setSelectedCategory(category.id);
-                  setCurrentView('products');
-                }}
-                className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-center group hover:-translate-y-1"
-              >
-                <Icon className="w-8 h-8 mx-auto mb-3 text-blue-500 group-hover:text-orange-500 transition-colors" />
-                <span className="font-semibold text-gray-700">{category.name}</span>
-              </button>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
@@ -530,7 +625,19 @@ Recibirás un email de confirmación pronto.`);
   const CheckoutView = () => (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-white p-6 rounded-xl shadow-lg">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Carrito de Compras Enterprise</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+          <ShoppingCart className="w-7 h-7 mr-3" />
+          Carrito de Compras Enterprise
+          <button
+            onClick={() => {
+              setShowCheckout(false);
+              setCurrentView('home');
+            }}
+            className="ml-auto text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg transition-colors"
+          >
+            ← Volver al Inicio
+          </button>
+        </h2>
         
         {cart.length === 0 ? (
           <div className="text-center py-8">
@@ -721,22 +828,36 @@ Recibirás un email de confirmación pronto.`);
 
             <nav className="hidden md:flex space-x-8">
               <button
-                onClick={() => setCurrentView('home')}
+                onClick={() => {
+                  setCurrentView('home');
+                  setShowCheckout(false);
+                }}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  currentView === 'home' ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-blue-600'
+                  currentView === 'home' && !showCheckout ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-blue-600'
                 }`}
               >
                 Inicio
               </button>
               <button
-                onClick={() => setCurrentView('products')}
+                onClick={() => {
+                  setCurrentView('products');
+                  setShowCheckout(false);
+                }}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  currentView === 'products' ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-blue-600'
+                  currentView === 'products' && !showCheckout ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-blue-600'
                 }`}
               >
                 Productos ({products.length})
               </button>
-              <button className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+              <button 
+                onClick={() => {
+                  setCurrentView('contact');
+                  setShowCheckout(false);
+                }}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  currentView === 'contact' && !showCheckout ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:text-blue-600'
+                }`}
+              >
                 Contacto
               </button>
             </nav>
@@ -753,7 +874,13 @@ Recibirás un email de confirmación pronto.`);
                   </span>
                 )}
               </button>
-              <button className="p-2 text-gray-700 hover:text-blue-600 transition-colors">
+              <button 
+                onClick={() => {
+                  alert('👋 ¡Hola! Sistema de login en desarrollo.\n\nPor ahora puedes:\n• Explorar productos\n• Agregar al carrito\n• Realizar compras como invitado\n\n¡Pronto tendremos cuentas de usuario!');
+                }}
+                className="p-2 text-gray-700 hover:text-blue-600 transition-colors"
+                title="Login (En desarrollo)"
+              >
                 <User className="w-6 h-6" />
               </button>
             </div>
@@ -765,6 +892,7 @@ Recibirás un email de confirmación pronto.`);
         {showCheckout && <CheckoutView />}
         {!showCheckout && currentView === 'home' && <HomeView />}
         {!showCheckout && currentView === 'products' && <ProductsView />}
+        {!showCheckout && currentView === 'contact' && <ContactView />}
       </main>
     </div>
   );
