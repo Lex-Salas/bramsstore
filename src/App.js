@@ -65,7 +65,7 @@ const BramsStore = () => {
             setLastSync(new Date().toISOString());
           } else {
             console.log('⚠️ No hay productos en GitHub, usando fallback');
-            setProducts(fallbackProducts);
+            
             setError('Usando productos locales - GitHub sin datos');
           }
         } else {
@@ -73,7 +73,7 @@ const BramsStore = () => {
         }
       } catch (err) {
         console.log('⚠️ GitHub falló, usando productos locales');
-        setProducts(fallbackProducts);
+        
         setError('GitHub no disponible - Usando productos locales');
       } finally {
         setLoading(false);
