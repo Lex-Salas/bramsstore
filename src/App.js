@@ -47,44 +47,7 @@ const BramsStore = () => {
 
   // Cargar productos
   useEffect(() => {
-    const fallbackProducts = [
-      {
-        id: "prod_001",
-        sku: "IP15P-128",
-        name: "iPhone 15 Pro",
-        description: "Último modelo con chip A17 Pro, 128GB de almacenamiento, cámara profesional",
-        category: { id: "smartphones", name: "Smartphones" },
-        pricing: { price: 650000, cost: 500000 },
-        inventory: { available: 13 },
-        media: { primaryImage: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop" },
-        sales: { totalSold: 45, averageRating: 4.8 },
-        status: { featured: true }
-      },
-      {
-        id: "prod_002",
-        sku: "MBP14-M3",
-        name: "MacBook Pro 14\"",
-        description: "M3 chip, 16GB RAM, 512GB SSD, pantalla Retina",
-        category: { id: "laptops", name: "Laptops" },
-        pricing: { price: 1200000, cost: 900000 },
-        inventory: { available: 7 },
-        media: { primaryImage: "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500&h=500&fit=crop" },
-        sales: { totalSold: 23, averageRating: 4.9 },
-        status: { featured: true }
-      },
-      {
-        id: "prod_003",
-        sku: "APP2-WHITE",
-        name: "AirPods Pro 2",
-        description: "Cancelación de ruido activa, estuche de carga MagSafe",
-        category: { id: "accesorios", name: "Accesorios" },
-        pricing: { price: 125000, cost: 80000 },
-        inventory: { available: 22 },
-        media: { primaryImage: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=500&h=500&fit=crop" },
-        sales: { totalSold: 78, averageRating: 4.7 },
-        status: { featured: false }
-      }
-    ];
+    
 
     const loadProducts = async () => {
       try {
